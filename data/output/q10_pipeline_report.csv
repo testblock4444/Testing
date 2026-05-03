@@ -1,0 +1,6 @@
+metric,value
+total_oracle_rows,8
+total_sqlserver_rows,7
+missing_in_target,2
+amount_mismatches,2
+unmatched_commodity_codes,1

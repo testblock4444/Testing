@@ -1,0 +1,3 @@
+trade_id,trade_ref,commodity_code,commodity_name,amount,currency,trade_value_lots,trade_date,desk_id
+8,TRD-008,XX,,9999.0,,,2024-01-15,DESK_A
+4,TRD-004,CU,COPPER,15000.0,USD,600.0,2024-01-15,DESK_A

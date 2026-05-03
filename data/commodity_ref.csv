@@ -1,0 +1,7 @@
+commodity_code,commodity_name,lot_size,currency
+CU,COPPER,25,USD
+AL,ALUMINIUM,20,USD
+ZN,ZINC,25,USD
+NI,NICKEL,6,USD
+PB,LEAD,25,USD
+SN,TIN,5,USD

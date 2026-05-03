@@ -1,0 +1,5 @@
+trade_id,trade_ref,amount,status,desk_id,is_current,valid_from,valid_to
+1,TRD-001,10000.00,CONFIRMED,DESK_A,True,2024-01-01,
+2,TRD-002,25000.50,CONFIRMED,DESK_B,True,2024-01-01,
+3,TRD-003,8500.00,PENDING,DESK_C,True,2024-01-01,
+5,TRD-005,500.00,PENDING,DESK_C,False,2024-01-01,

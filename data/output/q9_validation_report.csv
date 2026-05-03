@@ -1,0 +1,4 @@
+table_name,oracle_rows,sqlserver_rows,difference,status
+trades,8,7,1,FAIL
+trade_history,10,10,0,PASS
+dirty_data,8,8,0,PASS

@@ -1,0 +1,3 @@
+trade_id,trade_ref,commodity,commodity_code,amount,direction,desk_id,trade_date,status,loaded_at
+4,TRD-004,COPPER,CU,15000.0,BUY,DESK_A,2024-01-15,CONFIRMED,2024-01-15 06:00:04
+8,TRD-008,UNKNOWN,XX,9999.0,BUY,DESK_A,2024-01-15,CONFIRMED,2024-01-15 06:00:08

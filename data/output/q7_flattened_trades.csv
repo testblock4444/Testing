@@ -1,0 +1,5 @@
+trade_id,trade_ref,counterparty,settlement_date,currency,broker_id,loaded_at,data_quality_flag
+1,TRD-001,,,,,"""""settlement_date"""":""""2024-01-17""""",MISSING_COUNTERPARTY
+2,TRD-002,,,,,"""""settlement_date"""":""""2024-01-17""""",MISSING_COUNTERPARTY
+3,TRD-003,,,,,"""""currency"""":""""EUR""""",MISSING_COUNTERPARTY
+4,TRD-004,,,,,"""""settlement_date"""":""""2024-01-18""""",MISSING_COUNTERPARTY

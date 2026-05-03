@@ -1,0 +1,69 @@
+import os
+
+from pyspark.sql import SparkSession
+import pyspark.sql.functions as F
+from datetime import date
+
+spark = (
+    SparkSession.builder
+    .appName("SCD_Type2_Trade_Amendments")
+    .master("local[*]")
+    .getOrCreate()
+)
+
+spark.sparkContext.setLogLevel("ERROR")
+
+DATA = "data"
+OUT ="data/output"
+TODAY = date.today()
+
+Current_df = spark.read.csv(f"{DATA}/current_trades.csv", header=True, inferSchema=True)
+New_df = spark.read.csv(f"{DATA}/new_trades.csv", header=True, inferSchema=True)
+
+merged_df = (
+    New_df.alias("n").join
+    (
+        Current_df.alias("c").filter("is_current = True"),  
+        on="trade_id",
+        how="left"
+    )
+    .filter(
+            (F.col("n.amount") != F.col("c.amount")) | 
+            (F.col("n.status") != F.col("c.status")) |
+            (F.col("c.trade_id").isNull())
+    )
+    .select("n.*")
+    .withColumn("is_current", F.lit(True))
+    .withColumn("valid_from", F.lit(TODAY))
+    .withColumn("valid_to", F.lit(None))
+)
+
+merged_df.show()
+
+merged_id = merged_df.select("trade_id")
+
+
+updated_df = (
+    Current_df.alias("c").join(
+        merged_id.alias("m"), on="trade_id", how="inner"
+        ) 
+     .select("c.*")
+    .withColumn("is_current", F.lit(False))
+    .withColumn("valid_to", F.lit(TODAY))
+
+)
+
+updated_df.show()
+
+unchanged_df = (
+    Current_df.alias("c").join(
+        merged_id.alias("m"), on="trade_id", how="left_anti"
+    )
+)
+
+unchanged_df.show()
+
+
+final_df = merged_df.unionByName(updated_df).unionByName(unchanged_df)
+
+final_df.show()

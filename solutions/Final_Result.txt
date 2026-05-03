@@ -1,0 +1,238 @@
+============================================================
+QUESTION 1 — RECONCILIATION
+============================================================
+
+--- Missing in SQL Server: 2 rows ---
++--------+---------+-------+
+|trade_id|trade_ref| amount|
++--------+---------+-------+
+|       4|  TRD-004|15000.0|
+|       8|  TRD-008| 9999.0|
++--------+---------+-------+
+
+
+--- Amount Mismatches: 2 rows ---
++--------+---------+-------------+----------------+----------+
+|trade_id|trade_ref|oracle_amount|sqlserver_amount|difference|
++--------+---------+-------------+----------------+----------+
+|       2|  TRD-002|      25000.5|         25001.5|       1.0|
+|       2|  TRD-002|      25000.5|         25001.5|       1.0|
++--------+---------+-------------+----------------+----------+
+
+
+--- RECONCILIATION SUMMARY ---
+  Oracle rows:         8
+  SQL Server rows:     7
+  Missing in target:   2
+  Amount mismatches:   2
+
+  Output written to data/output/
+
+============================================================
+QUESTION 2 — WINDOW FUNCTIONS / LATEST RECORD
+============================================================
+
+--- Latest Version Per Trade + Churn Flag ---
++--------+---------+-------+---------+-------------+----------+-------------------+
+|trade_id|trade_ref| amount|   status|version_count|churn_flag|         updated_at|
++--------+---------+-------+---------+-------------+----------+-------------------+
+|       1|  TRD-001|10500.0|CONFIRMED|            3|    NORMAL|2024-01-15 14:00:00|
+|       2|  TRD-002|24000.0|  AMENDED|            2|    NORMAL|2024-01-15 10:00:00|
+|       3|  TRD-003| 9100.0|CONFIRMED|            5|HIGH_CHURN|2024-01-15 10:00:00|
++--------+---------+-------+---------+-------------+----------+-------------------+
+
+  Output written to data/output/q2_latest_trades.csv
+
+============================================================
+QUESTION 3 — DATA CLEANING
+============================================================
+
+  Original row count: 8
+  After dedup:        7 (removed 1)
+  After amount clean: 5 (removed 2)
+  After date clean:   4 (removed 1)
+
+  CLEANING SUMMARY:
+    Started with:  8 rows
+    Final output:  4 rows
+    Total dropped: 4 rows
+
+--- Clean Data ---
++--------+---------+--------+----------+-------+                                
+|trade_id|commodity|  amount|trade_date|desk_id|
++--------+---------+--------+----------+-------+
+|       7|     ZINC| 8500.00|2024-01-16| DESK_C|
+|       2|ALUMINIUM|25000.50|2024-01-15| DESK_B|
+|       1|   COPPER|10000.00|2024-01-15| DESK_A|
+|       6|ALUMINIUM|15000.00|2024-01-16| DESK_B|
++--------+---------+--------+----------+-------+
+
+  Output written to data/output/q3_clean_trades.csv
+
+============================================================
+QUESTION 4 — NET POSITION / AGGREGATION
+============================================================
+
+--- Net Position Per Commodity ---
++---------+---------+----------+------------+--------+
+|commodity|gross_buy|gross_sell|net_position|  status|
++---------+---------+----------+------------+--------+
+|     ZINC|  68500.0|       0.0|     68500.0|BREACHED|
+|   COPPER|  25000.0|       0.0|     25000.0|      OK|
+|  UNKNOWN|   9999.0|       0.0|      9999.0|      OK|
+|ALUMINIUM|   5000.0|   25000.5|    -20000.5|      OK|
+|   NICKEL|      0.0|   32000.0|    -32000.0|      OK|
++---------+---------+----------+------------+--------+
+
+  Output written to data/output/q4_net_positions.csv
+
+============================================================
+QUESTION 5 — REFERENCE DATA ENRICHMENT
+============================================================
+
+--- Trades with no reference match: 1 ---
++--------+---------+--------------+
+|trade_id|trade_ref|commodity_code|
++--------+---------+--------------+
+|       8|  TRD-008|            XX|
++--------+---------+--------------+
+
+
+--- Enriched Trades ---
++--------+---------+--------------+--------------+-------+--------+----------------+--------+-------+
+|trade_id|trade_ref|commodity_code|commodity_name| amount|lot_size|trade_value_lots|currency|desk_id|
++--------+---------+--------------+--------------+-------+--------+----------------+--------+-------+
+|       1|  TRD-001|            CU|        COPPER|10000.0|      25|           400.0|     USD| DESK_A|
+|       2|  TRD-002|            AL|     ALUMINIUM|25000.5|      20|         1250.03|     USD| DESK_B|
+|       3|  TRD-003|            ZN|          ZINC| 8500.0|      25|           340.0|     USD| DESK_C|
+|       4|  TRD-004|            CU|        COPPER|15000.0|      25|           600.0|     USD| DESK_A|
+|       5|  TRD-005|            NI|        NICKEL|32000.0|       6|         5333.33|     USD| DESK_B|
+|       6|  TRD-006|            AL|     ALUMINIUM| 5000.0|      20|           250.0|     USD| DESK_B|
+|       7|  TRD-007|            ZN|          ZINC|60000.0|      25|          2400.0|     USD| DESK_C|
+|       8|  TRD-008|            XX|          NULL| 9999.0|    NULL|            NULL|    NULL| DESK_A|
++--------+---------+--------------+--------------+-------+--------+----------------+--------+-------+
+
+  Output written to data/output/q5_enriched_trades.csv
+
+============================================================
+QUESTION 6 — DUPLICATE DETECTION
+============================================================
+
+--- Duplicated Trade IDs: 1 ---
++--------+----------------+
+|trade_id|occurrence_count|
++--------+----------------+
+|       2|               2|
++--------+----------------+
+
+--- Removed Duplicate Rows: 1 ---
++--------+-------------------+---------+---------+--------------+-------+---------+-------+----------+---------+
+|trade_id|          loaded_at|trade_ref|commodity|commodity_code| amount|direction|desk_id|trade_date|   status|
++--------+-------------------+---------+---------+--------------+-------+---------+-------+----------+---------+
+|       2|2024-01-15 06:00:45|  TRD-002|ALUMINIUM|            AL|25001.5|     SELL| DESK_B|2024-01-15|CONFIRMED|
++--------+-------------------+---------+---------+--------------+-------+---------+-------+----------+---------+
+
+
+  DEDUPLICATION SUMMARY:
+    Original: 7 rows
+    Deduped:  6 rows
+    Removed:  1 rows
+  Output written to data/output/q6_deduped_trades.csv
+
+============================================================
+QUESTION 7 — JSON COLUMN FLATTENING
+============================================================
+
+--- Flattened Trades ---
++--------+---------+------------+---------------+--------+---------+--------------------+--------------------+
+|trade_id|trade_ref|counterparty|settlement_date|currency|broker_id|           loaded_at|   data_quality_flag|
++--------+---------+------------+---------------+--------+---------+--------------------+--------------------+
+|       1|  TRD-001|        NULL|           NULL|    NULL|     NULL|""settlement_date...|MISSING_COUNTERPARTY|
+|       2|  TRD-002|        NULL|           NULL|    NULL|     NULL|""settlement_date...|MISSING_COUNTERPARTY|
+|       3|  TRD-003|        NULL|           NULL|    NULL|     NULL|""currency"":""EUR""|MISSING_COUNTERPARTY|
+|       4|  TRD-004|        NULL|           NULL|    NULL|     NULL|""settlement_date...|MISSING_COUNTERPARTY|
++--------+---------+------------+---------------+--------+---------+--------------------+--------------------+
+
+--- Data Quality Issues: 4 rows ---
++--------+---------+------------+---------------+--------+---------+--------------------+--------------------+
+|trade_id|trade_ref|counterparty|settlement_date|currency|broker_id|           loaded_at|   data_quality_flag|
++--------+---------+------------+---------------+--------+---------+--------------------+--------------------+
+|       1|  TRD-001|        NULL|           NULL|    NULL|     NULL|""settlement_date...|MISSING_COUNTERPARTY|
+|       2|  TRD-002|        NULL|           NULL|    NULL|     NULL|""settlement_date...|MISSING_COUNTERPARTY|
+|       3|  TRD-003|        NULL|           NULL|    NULL|     NULL|""currency"":""EUR""|MISSING_COUNTERPARTY|
+|       4|  TRD-004|        NULL|           NULL|    NULL|     NULL|""settlement_date...|MISSING_COUNTERPARTY|
++--------+---------+------------+---------------+--------+---------+--------------------+--------------------+
+
+  Output written to data/output/q7_flattened_trades.csv
+
+============================================================
+QUESTION 8 — SCD TYPE 2 (HISTORY PRESERVATION)
+============================================================
+Traceback (most recent call last):
+  File "i:\PySpark Code Testing\Testing\solutions\aaaa.py", line 594, in <module>
+    question_8()
+  File "i:\PySpark Code Testing\Testing\solutions\aaaa.py", line 383, in question_8
+    current = spark.createDataFrame(current_data, current_schema)
+  File "E:\Software\Python\Python310\lib\site-packages\pyspark\sql\session.py", line 1605, in createDataFrame
+    return self._create_dataframe(
+  File "E:\Software\Python\Python310\lib\site-packages\pyspark\sql\session.py", line 1649, in _create_dataframe
+    rdd, struct = self._createFromLocal(
+  File "E:\Software\Python\Python310\lib\site-packages\pyspark\sql\session.py", line 1203, in _createFromLocal
+    struct = self._inferSchemaFromList(data, names=schema)
+  File "E:\Software\Python\Python310\lib\site-packages\pyspark\sql\session.py", line 1072, in _inferSchemaFromList
+    raise PySparkValueError(
+pyspark.errors.exceptions.base.PySparkValueError: [CANNOT_DETERMINE_TYPE] Some of types cannot be determined after inferring.
+SUCCESS: The process with PID 28244 (child process of PID 2528) has been terminated.
+SUCCESS: The process with PID 2528 (child process of PID 24332) has been terminated.
+SUCCESS: The process with PID 24332 (child process of PID 24896) has been terminated.
+PS I:\PySpark Code Testing\Testing> 
+
+
+
+
+============================================================
+QUESTION 9 — AUTOMATED VALIDATION REPORT
+============================================================
+  trades: Oracle=8 SQLServer=7 diff=1 [FAIL]
+  trade_history: Oracle=10 SQLServer=10 diff=0 [PASS]
+  dirty_data: Oracle=8 SQLServer=8 diff=0 [PASS]
+
+--- VALIDATION REPORT ---
++-------------+-----------+--------------+----------+------+                    
+|table_name   |oracle_rows|sqlserver_rows|difference|status|
++-------------+-----------+--------------+----------+------+
+|trades       |8          |7             |1         |FAIL  |
+|trade_history|10         |10            |0         |PASS  |
+|dirty_data   |8          |8             |0         |PASS  |
++-------------+-----------+--------------+----------+------+
+
+  ⚠️  FAILURES: 1 table(s) did not match                                         
++----------+-----------+--------------+----------+------+                       
+|table_name|oracle_rows|sqlserver_rows|difference|status|
++----------+-----------+--------------+----------+------+
+|    trades|          8|             7|         1|  FAIL|
++----------+-----------+--------------+----------+------+
+
+  Output written to data/output/q9_validation_report.csv                        
+
+============================================================
+QUESTION 10 — FULL END-TO-END PIPELINE
+============================================================
+
+  Loaded: Oracle=8 rows, SQLServer=7 rows, Ref=6 rows
+  After clean: 8 rows
+  Unmatched commodity codes: 1
+
+--- PIPELINE REPORT ---
++-------------------------+-----+                                               
+|metric                   |value|
++-------------------------+-----+
+|total_oracle_rows        |8    |
+|total_sqlserver_rows     |7    |
+|missing_in_target        |2    |
+|amount_mismatches        |2    |
+|unmatched_commodity_codes|1    |
++-------------------------+-----+
+
+  All outputs written to data/output/   
+
